@@ -10,14 +10,16 @@ app = Flask("onepop")
 @app.get('/')
 def index():
     posts = database.all_newest_posts(page=int(request.args.get("page", 0)))
-    return render_template("index.html", boards=database.list_boards(), recent_posts=posts, current_page=int(request.args.get("page", 0)))
+    username = database.get_name_from_cookie(request.cookies.get("account"))
+    return render_template("index.html", boards=database.list_boards(), recent_posts=posts, current_page=int(request.args.get("page", 0)), username = username)
 
 @app.get('/board/<current_board>')
 def index_board(current_board):
     posts = database.newest_posts(current_board, page=int(request.args.get("page", 0)))
     board_description = database.board_description(current_board)
+    username = database.get_name_from_cookie(request.cookies.get("account"))
     return render_template("index.html", boards=database.list_boards(), current_board=current_board, recent_posts=posts,
-                           board_description=board_description, current_page=int(request.args.get("page", 0)))
+                           board_description=board_description, current_page=int(request.args.get("page", 0)), username = username)
 
 @app.get('/post/<int:post_id>')
 def view_post(post_id):
@@ -29,6 +31,8 @@ def view_post(post_id):
 
         comments_list = database.get_comments_by_post_id(post_id)
         comment_tree = database.build_comment_tree(comments_list)
+
+        username = database.get_name_from_cookie(request.cookies.get("account"))
 
         # If a reply_to ID is provided, find the corresponding comment object
         if replying_to_comment_id:
@@ -77,14 +81,21 @@ def view_post(post_id):
             comments=comment_tree,
             replying_to_comment_id=replying_to_comment_id, # Pass the ID
             replying_to_comment=replying_to_comment, # Pass the comment object for display
-            post_id=post_id, boards=database.list_boards()
+            post_id=post_id, boards=database.list_boards(),
+            username = username
         )
     else:
-        return render_template("post.html", boards=database.list_boards(), post=None, comments=[], replying_to_comment_id=None, replying_to_comment=None, post_id=post_id)
+        return render_template("post.html", 
+                               boards=database.list_boards(), 
+                               post=None, comments=[], 
+                               replying_to_comment_id=None, 
+                               replying_to_comment=None, 
+                               post_id=post_id, 
+                               username = username)
 
 @app.post('/create_post')
 def create_post():
-    owner = None
+    owner = database.get_id_from_cookie(request.cookies.get("account"))
     image_url = None
     board = request.form.get("board")[:32]
     title = request.form.get("title")[:128]
@@ -124,7 +135,7 @@ def create_comment_route():
         return "Invalid captcha."
 
     # Get user ID from session/cookie if logged in, otherwise owner_id will be None (anonymous)
-    owner_id = None
+    owner_id = database.get_id_from_cookie(request.cookies.get("account"))
 
     try:
         post_id = int(post_id)
@@ -158,15 +169,56 @@ def captcha_w2():
 @app.get('/login')
 def login():
     return render_template("login.html")
+
 @app.post('/login')
-def handle_login(): # TODO
-    return request.form.get("username")
+def handle_login():
+    username = request.form.get("username")
+    password = helpers.hash(request.form.get("password"))
+
+    # check captcha
+    captcha_solution = request.form.get("captcha_input")[:10]
+    captcha_token = request.form.get("captcha_token")
+    is_valid = database.captcha_check_wave_2(captcha_token, captcha_solution)
+    if not is_valid:
+        return "Invalid captcha."
+
+    cookie = database.account_login(username, password)
+    if not cookie:
+        return "Invalid username or password."
+    
+    response = redirect("/")
+    response.set_cookie("account", cookie)
+    return response
 
 @app.get('/signup')
 def signup():
     return render_template("signup.html")
 @app.post('/signup')
-def handle_signup(): # TODO
-    return request.form.get("username")
+def handle_signup():
+    username = request.form.get("username")
+    password = helpers.hash(request.form.get("password"))
+
+    # check captcha
+    captcha_solution = request.form.get("captcha_input")[:10]
+    captcha_token = request.form.get("captcha_token")
+    is_valid = database.captcha_check_wave_2(captcha_token, captcha_solution)
+    if not is_valid:
+        return "Invalid captcha."
+
+    if database.account_exists(username):
+        return "Username already exists."
+
+    cookie = database.new_account(username, password)
+
+    response = redirect("/")
+    response.set_cookie("account", cookie)
+    return response
+
+@app.get('/logout')
+def logout():
+    response = redirect("/")
+    response.delete_cookie("account")
+    return response
+    
 
 app.run("0.0.0.0", port=8080)

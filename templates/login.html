@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>onepop</title>
+    <script src="/static/popcap.js"></script>
     <script src="/static/tailwind.js"></script>
     <style type="text/tailwindcss">
       @layer base {
@@ -43,6 +44,21 @@
             />
           </div>
         </div>
+
+        <div>
+          <label for="post-content" class="block text-sm font-medium text-gray-300">captcha</label>
+          <div id="pow-captcha"></div>
+          <div class="mt-1">
+            <input
+              id="captcha_input"
+              name="captcha_input"
+              type="text"
+              required
+              class="block w-full px-3 py-2 border border-gray-700 rounded-md shadow-sm bg-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-purple-600 focus:border-purple-600 sm:text-sm"
+            />
+          </div>
+        </div>
+        <input type="hidden" id="captcha_token" name="captcha_token" value="">
 
         <div>
           <button

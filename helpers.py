@@ -22,6 +22,11 @@ def generate_long_code():
     Random 16 Letter String with all Letters and Numbers.
     """
     return ''.join(random.choices(string.ascii_letters + string.digits, k=16))
+def generate_cookie_code():
+    """
+    Random 32 Letter String with all Letters and Numbers.
+    """
+    return ''.join(random.choices(string.ascii_letters + string.digits, k=32))
 def generate_uuid():
     return str(uuid.uuid4())
 

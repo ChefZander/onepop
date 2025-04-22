@@ -485,3 +485,46 @@ class Database():
         root_comments.sort(key=lambda x: x['updated_at'])
 
         return root_comments
+
+    # AUTH
+    def get_id_from_cookie(self, cookie):
+        conn, cursor = self.handle()
+        cursor.execute("SELECT user_id FROM users WHERE cookie = ?", (cookie,))
+        user_id = cursor.fetchone()
+        conn.close()
+        return user_id[0] if user_id else None
+    def get_name_from_cookie(self, cookie):
+        conn, cursor = self.handle()
+        cursor.execute("SELECT username FROM users WHERE cookie = ?", (cookie,))
+        user_name = cursor.fetchone()
+        conn.close()
+        return user_name[0] if user_name else None
+
+    def account_exists(self, username):
+        conn, cursor = self.handle()
+        cursor.execute("SELECT COUNT(*) FROM users WHERE username = ?", (username,))
+        count = cursor.fetchone()[0]
+        conn.close()
+        return count != 0
+    
+    def new_account(self, username, password):
+        conn, cursor = self.handle()
+        cookie = helpers.generate_cookie_code()
+        cursor.execute("INSERT INTO users (username, password, cookie) VALUES (?, ?, ?)", (username, password, cookie))
+        conn.commit()
+        conn.close()
+        return cookie
+    
+    def account_login(self, username, password):
+        conn, cursor = self.handle()
+        # check if password is valid
+        cursor.execute("SELECT password FROM users WHERE username = ?", (username,))
+        real_password = cursor.fetchone()[0]
+        if password != real_password:
+            return False
+
+        cookie = helpers.generate_cookie_code()
+        cursor.execute("UPDATE users SET cookie = ? WHERE username = ?", (cookie, username))
+        conn.commit()
+        conn.close()
+        return cookie

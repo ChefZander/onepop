@@ -56,6 +56,16 @@
   <body class="flex flex-col items-center min-h-screen p-4">
 
     <div class="w-full max-w-3xl space-y-8">
+
+      <div class="absolute top-0 right-0 bg-gray-800 text-white text-sm p-2 rounded-bl-lg">
+        {% if username %}
+        @{{ username }} / <a href="/logout">logout</a>
+        {% endif %}
+        {% if not username %}
+        <a href="/login">login</a> / <a href="/signup">signup</a>
+        {% endif %}
+      </div>
+
       <a href="/"><h1 class="p-6 text-5xl font-semibold text-white mb-4 text-center">onepop</h1></a>
 
       <section class="p-6 bg-gray-800 rounded-lg shadow-lg">
