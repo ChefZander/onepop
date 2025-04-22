@@ -110,8 +110,8 @@ function solveProofOfWork(container, captchaToken) {
             imgElement.src = imageUrl;
             imgElement.classList.add("justify-center");
             imgElement.classList.add("rounded-xl");
-            imgElement.style.width = "25%";
-            imgElement.style.height = "auto";
+            imgElement.style.width = "200px";
+            imgElement.style.height = "80px";
 
             container.appendChild(imgElement);
 
